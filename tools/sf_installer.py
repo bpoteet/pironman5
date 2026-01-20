@@ -5,6 +5,7 @@ import time
 import threading
 import os
 import site
+import glob
 import importlib
 
 class ConfigTxt(object):
@@ -390,9 +391,10 @@ class SF_Installer():
             self.do(f'Install {dep}', f'{self.venv_pip} install --upgrade {dep}')
 
     def check_git_url(self):
+        print("Check git URL...")
         # Test if github url reachable
-        site.main()  # 刷新site-packages路径
-        importlib.invalidate_caches()  # 清除导入缓存
+        venv_site_pkgs = f"{glob.glob(f'{self.venv_path}/lib/python*')[0]}/site-packages"
+        sys.path.insert(0, venv_site_pkgs)  # 加到查找路径最前面
         requests = importlib.import_module('requests')
         for url in self.BACKUP_GIT_URLS:
             try:
@@ -405,6 +407,7 @@ class SF_Installer():
         else:
             print(f"Error: None of {self.BACKUP_GIT_URLS} is reachable")
             exit(1)
+        print(f"- Use {self.GIT_URL} as git URL")
 
     def install_py_src_pkgs(self):
         if len(self.python_source) == 0:
