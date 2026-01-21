@@ -400,6 +400,7 @@ class SF_Installer():
             try:
                 requests.get(url)
                 self.GIT_URL = url
+                print(f"- Use {self.GIT_URL} as git URL")
                 return
             except requests.exceptions.RequestException:
                 print(f"Warning: {url} is not reachable")
@@ -407,7 +408,6 @@ class SF_Installer():
         else:
             print(f"Error: None of {self.BACKUP_GIT_URLS} is reachable")
             exit(1)
-        print(f"- Use {self.GIT_URL} as git URL")
 
     def install_py_src_pkgs(self):
         if len(self.python_source) == 0:
