@@ -135,12 +135,18 @@ def main():
     # ----------------------------------------    
     if args.remove_dashboard:
         import os
+        import shutil
         print("Remove Dashboard")
         os.system(f'{PIP_PATH} uninstall pm_dashboard -y')
         while True:
             yesno = input("Do you want to uninstall influxdb? (y/n) ")
             if yesno.lower() == 'y':
-                os.system(f'apt-get purge influxdb -y')
+                if shutil.which('apt-get'):
+                    os.system('apt-get purge influxdb -y')
+                elif shutil.which('pacman'):
+                    # -Rns: remove package (-R), drop config files (-n), remove unneeded deps (-s)
+                    # equivalent to apt-get purge
+                    os.system('pacman -Rns --noconfirm influxdb')
                 break
             elif yesno.lower() == 'n':
                 break
