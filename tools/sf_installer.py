@@ -7,6 +7,7 @@ import os
 import site
 import glob
 import importlib
+import shutil
 
 class ConfigTxt(object):
     DEFAULT_BOOT_FILE = "/boot/firmware/config.txt"
@@ -100,6 +101,29 @@ class SF_Installer():
         'python3-venv',
         'git',
     ]
+
+    PACMAN_DEPENDENCIES = [
+        'python-pip',
+        'python-virtualenv',
+        'git',
+    ]
+
+    PACMAN_DEP_MAP = {
+        'python3-pip':        'python-pip',
+        'python3-venv':       'python-virtualenv',
+        'git':                'git',
+        'curl':               'curl',
+        'influxdb':           'influxdb',
+        'kmod':               'kmod',
+        'libopenjp2-7':       'openjpeg2',
+        'libjpeg-dev':        'libjpeg-turbo',
+        'python3-gpiozero':   'python-gpiozero',
+        'libfreetype6-dev':   'freetype2',
+        'lsof':               'lsof',
+        'i2c-tools':          'i2c-tools',
+        'swig':               'swig',
+        'python3-setuptools': 'python-setuptools',
+    }
 
     PIP_DEPENDENCIES = [
         'pip',
@@ -242,6 +266,14 @@ class SF_Installer():
                             ).readline().strip()
         return user
 
+    def get_pkg_manager(self):
+        if shutil.which('apt-get'):
+            return 'apt'
+        elif shutil.which('pacman'):
+            return 'pacman'
+        else:
+            raise RuntimeError('No supported package manager found (apt-get or pacman)')
+
     def run_command(self, cmd=""):
         import subprocess
         p = subprocess.Popen(cmd,
@@ -337,15 +369,31 @@ class SF_Installer():
 
     def install_build_dep(self):
         print("Install build dependencies...")
-        self.do('Update package list', 'DEBIAN_FRONTEND=noninteractive apt-get update')
-        deps = [ *self.APT_DEPENDENCIES ]
+        pkg_manager = self.get_pkg_manager()
+        if pkg_manager == 'apt':
+            self.do('Update package list', 'DEBIAN_FRONTEND=noninteractive apt-get update')
+            deps = [ *self.APT_DEPENDENCIES ]
 
-        if self.build_dependencies is not None:
-            deps += self.build_dependencies
+            if self.build_dependencies is not None:
+                deps += self.build_dependencies
 
-        deps = " ".join(deps)
-        self.do(f'Install build dependencies: {deps}',
-                f'DEBIAN_FRONTEND=noninteractive apt-get install -y {deps}')
+            deps = " ".join(deps)
+            self.do(f'Install build dependencies: {deps}',
+                    f'DEBIAN_FRONTEND=noninteractive apt-get install -y {deps}')
+        else:
+            self.do('Update package list', 'pacman -Sy --noconfirm')
+            deps = [ *self.PACMAN_DEPENDENCIES ]
+
+            if self.build_dependencies is not None:
+                for dep in self.build_dependencies:
+                    if dep in self.PACMAN_DEP_MAP:
+                        deps.append(self.PACMAN_DEP_MAP[dep])
+                    else:
+                        print(f" - Warning: no pacman equivalent for '{dep}', skipping")
+
+            deps = " ".join(deps)
+            self.do(f'Install build dependencies: {deps}',
+                    f'pacman -S --noconfirm {deps}')
 
     def run_commands_before_install(self):
         if len(self.before_install_commands) == 0:
@@ -360,11 +408,24 @@ class SF_Installer():
             len(self.custom_apt_dependencies) == 0:
             return
         print("Install APT dependencies...")
-        # for dep in self.custom_apt_dependencies:
-        #     self.do(f'Install {dep}', f'DEBIAN_FRONTEND=noninteractive apt-get install -y {dep}')
-        deps = " ".join(self.custom_apt_dependencies)
-        self.do(f'Install APT dependencies: {deps}',
-                f'DEBIAN_FRONTEND=noninteractive apt-get install -y {deps}')
+        pkg_manager = self.get_pkg_manager()
+        if pkg_manager == 'apt':
+            # for dep in self.custom_apt_dependencies:
+            #     self.do(f'Install {dep}', f'DEBIAN_FRONTEND=noninteractive apt-get install -y {dep}')
+            deps = " ".join(self.custom_apt_dependencies)
+            self.do(f'Install APT dependencies: {deps}',
+                    f'DEBIAN_FRONTEND=noninteractive apt-get install -y {deps}')
+        else:
+            mapped = []
+            for dep in self.custom_apt_dependencies:
+                if dep in self.PACMAN_DEP_MAP:
+                    mapped.append(self.PACMAN_DEP_MAP[dep])
+                else:
+                    print(f" - Warning: no pacman equivalent for '{dep}', skipping")
+            if mapped:
+                deps = " ".join(mapped)
+                self.do(f'Install pacman dependencies: {deps}',
+                        f'pacman -S --noconfirm {deps}')
 
     def create_working_dir(self):
         print("Create working directory...")
