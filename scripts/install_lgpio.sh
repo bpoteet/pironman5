@@ -11,19 +11,38 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 2. Try to install via package manager first (fastest & cleanest)
-echo "- Attempting to install via apt..."
-if apt-get install -y liblgpio-dev python3-lgpio 2>/dev/null; then
-    echo "✓ LGPIO installed successfully via apt."
-    exit 0
+# 2. Detect package manager
+if command -v apt-get > /dev/null 2>&1; then
+    PKG_MANAGER="apt"
+elif command -v pacman > /dev/null 2>&1; then
+    PKG_MANAGER="pacman"
 else
-    echo "! apt package not found. Proceeding with source compilation."
+    echo "Error: No supported package manager found (apt-get or pacman)"
+    exit 1
 fi
 
-# 3. Install build dependencies
+# 3. Try pre-built packages first (apt only — no reliable pacman equivalent for liblgpio-dev)
+if [ "$PKG_MANAGER" = "apt" ]; then
+    echo "- Attempting to install via apt..."
+    if apt-get install -y liblgpio-dev python3-lgpio 2>/dev/null; then
+        echo "✓ LGPIO installed successfully via apt."
+        exit 0
+    else
+        echo "! apt package not found. Proceeding with source compilation."
+    fi
+fi
+
+# 4. Install build dependencies for source compilation
+#    apt:    python3-dev and python3-setuptools are separate packages
+#    pacman: python3-dev is bundled in 'python'; python-setuptools is the equivalent of python3-setuptools
 echo "- Installing build dependencies..."
-apt-get update
-apt-get install -y swig python3-dev python3-setuptools unzip wget make gcc
+if [ "$PKG_MANAGER" = "apt" ]; then
+    apt-get update
+    apt-get install -y swig python3-dev python3-setuptools unzip wget make gcc
+else
+    pacman -Sy --noconfirm
+    pacman -S --noconfirm swig python python-setuptools unzip wget make gcc
+fi
 
 # 4. Download and extract source
 echo "- Downloading LGPIO source..."
