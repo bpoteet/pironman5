@@ -73,6 +73,14 @@ make
 make install
 
 # 7. Update shared library cache
+# On Arch, /usr/local/lib is not included in the default dynamic linker search
+# path (unlike Debian/Ubuntu which include it via /etc/ld.so.conf). Without this
+# step, the linker will not find liblgpio.so after 'make install' even though
+# the library was placed in /usr/local/lib.
+if [ "$PKG_MANAGER" = "pacman" ]; then
+    echo "- Registering /usr/local/lib with dynamic linker (Arch)..."
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/lgpio.conf
+fi
 ldconfig
 
 # 8. Install Python Bindings (rpi.lgpio dependency)
