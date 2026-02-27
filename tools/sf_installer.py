@@ -117,7 +117,8 @@ class SF_Installer():
         'kmod':               'kmod',
         'libopenjp2-7':       'openjpeg2',
         'libjpeg-dev':        'libjpeg-turbo',
-        'python3-gpiozero':   'python-gpiozero',
+        # python3-gpiozero omitted: not in Arch official repos (AUR only);
+        # gpiozero is installed via pip into the venv, so the system package is not required.
         'libfreetype6-dev':   'freetype2',
         'lsof':               'lsof',
         'i2c-tools':          'i2c-tools',
