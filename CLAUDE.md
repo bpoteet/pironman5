@@ -45,7 +45,7 @@ Where apt packages are installed, provide pacman equivalents:
 | kmod | kmod |
 | libopenjp2-7 | openjpeg2 |
 | libjpeg-dev | libjpeg-turbo |
-| python3-gpiozero | (AUR: python-gpiozero) — skipped on Arch; pip installs gpiozero into the venv |
+| python3-gpiozero | (AUR: python-gpiozero)  ^`^t skipped on Arch; pip installs gpiozero into the venv |
 | libfreetype6-dev | freetype2 |
 | lsof | lsof |
 | i2c-tools | i2c-tools |
@@ -278,3 +278,5 @@ or use NVMe instead.
 - InfluxDB on Arch: skip the APT repo/key setup entirely, use `pacman -S influxdb`.
 - The Pironman5 SD card extender introduces enough latency to cause intermittent
   boot failures on Arch. NVMe is the recommended storage for this case.
+- `/usr/local/lib` is not in Arch's default linker search path — install_lgpio.sh 
+  creates /etc/ld.so.conf.d/lgpio.conf to register it after source compilation.
