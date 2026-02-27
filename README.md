@@ -25,11 +25,18 @@ Quick Links:
 
 ## Installation
 
-For systems that don't have git, python3 pre-installed you need to install them first
+**Debian/Ubuntu** — For systems that don't have git, python3 pre-installed you need to install them first
 
 ```bash
 sudo apt-get update
 sudo apt-get install git python3 -y
+```
+
+**Arch/Manjaro** — Install the base dependencies first. `base-devel` and `swig` are required if lgpio must be compiled from source, which is the default on Arch since no pre-built package is available.
+
+```bash
+sudo pacman -Syu
+sudo pacman -S git python base-devel swig
 ```
 
 Execute the installation script
